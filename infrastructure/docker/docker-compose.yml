@@ -1,0 +1,8 @@
+version: '3.9'
+
+services:
+  amanirobot.webapi:
+    image: ${DOCKER_REGISTRY-}amanirobot.webapi
+    build:
+      context: .
+      dockerfile: src/WebApi/Dockerfile

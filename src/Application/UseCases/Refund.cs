@@ -1,0 +1,52 @@
+using AmaniRobot.Application.Boundaries.Refunds;
+using AmaniRobot.Application.Repositories;
+using AmaniRobot.Application.Services;
+using AmaniRobot.Domain;
+
+namespace AmaniRobot.Application.UseCases;
+
+public sealed class Refund(
+                        IEntityFactory entityFactory,
+                        IOutputPort outputHandler,
+                        IAccountRepository accountRepository,
+                        IUnitOfWork unitOfWork,
+                        IServiceBusClient serviceBus) : IUseCase
+{
+    private readonly IEntityFactory _entityFactory = entityFactory;
+    private readonly IOutputPort _outputHandler = outputHandler;
+    private readonly IAccountRepository _accountRepository = accountRepository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IServiceBusClient _serviceBus = serviceBus;
+
+    public async Task ExecuteAsync(RefundInput input)
+    {
+        var account = await _accountRepository.Get(input.AccountId);
+        if (account == null)
+        {
+            _outputHandler.Error($"The account {input.AccountId} does not exist or is already closed.");
+            return;
+        }
+
+        var debit = account.Withdraw(_entityFactory, input.Amount);
+
+        if (debit == null)
+        {
+            _outputHandler.Error($"The account {input.AccountId} does not have enough funds to withdraw {input.Amount}.");
+            return;
+        }
+
+        await _accountRepository.Update(account, debit);
+
+        // Publish the event to the enterprise service bus
+        await _serviceBus.PublishEventAsync(new Contracts.Events.WithdrawCompleted() { AccountId = input.AccountId, Amount = input.Amount.ToMoney().ToDecimal() });
+
+        await _unitOfWork.Save();
+
+        RefundOutput output = new RefundOutput(
+            debit,
+            account.GetCurrentBalance()
+        );
+
+        _outputHandler.Default(output);
+    }
+}
