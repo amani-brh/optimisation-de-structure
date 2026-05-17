@@ -9,6 +9,11 @@ public interface IMongoContext : IDisposable
     IClientSessionHandle Session { get; set; }
     Task<int> SaveChangesAsync();
     void AddCommand(Func<Task> func);
-    IMongoCollection<T> GetCollection<T>(string name)
-        where T : IEntity;
+
+    // existing — for domain entities
+    IMongoCollection<T> GetCollection<T>(string name) where T : IEntity;
+
+    // new — for flat document models
+    IMongoCollection<T> GetDocumentCollection<T>(string name);
+
 }

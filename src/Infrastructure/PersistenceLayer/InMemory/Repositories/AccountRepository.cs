@@ -3,14 +3,9 @@ using AmaniRobot.Domain.Accounts;
 
 namespace AmaniRobot.Infrastructure.PersistenceLayer.InMemory.Repositories;
 
-public sealed class AccountRepository : IAccountRepository
+public sealed class AccountRepository(GenocsContext context) : IAccountRepository
 {
-    private readonly GenocsContext _context;
-
-    public AccountRepository(GenocsContext context)
-    {
-        _context = context;
-    }
+    private readonly GenocsContext _context = context;
 
     public async Task Add(IAccount account, ICredit credit)
     {

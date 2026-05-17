@@ -1,33 +1,48 @@
 using AmaniRobot.Domain;
 using AmaniRobot.Domain.Accounts;
 using AmaniRobot.Domain.Customers;
+using AmaniRobot.Domain.Reports;
 using AmaniRobot.Domain.ValueObjects;
 
 namespace AmaniRobot.Infrastructure.PersistenceLayer.MongoDb;
 
 public sealed class EntityFactory : IEntityFactory
 {
+    // ── existing ──────────────────────────────────────────────────
+
     public IAccount NewAccount(ICustomer customer)
-    {
-        var account = new Account(customer);
-        return account;
-    }
+        => new Account(customer);
 
     public ICredit NewCredit(IAccount account, PositiveMoney amountToDeposit, DateTime transactionDate)
-    {
-        var credit = new Credit(account, amountToDeposit, transactionDate);
-        return credit;
-    }
+        => new Credit(account, amountToDeposit, transactionDate);
 
     public ICustomer NewCustomer(SSN ssn, Name name)
-    {
-        var customer = new Customer(ssn, name);
-        return customer;
-    }
+        => new Customer(ssn, name);
 
     public IDebit NewDebit(IAccount account, PositiveMoney amountToWithdraw, DateTime transactionDate)
-    {
-        var debit = new Debit(account, amountToWithdraw, transactionDate);
-        return debit;
-    }
+        => new Debit(account, amountToWithdraw, transactionDate);
+
+    // ── robot report ──────────────────────────────────────────────
+
+    public IReport NewReport(
+        int runId,
+        DateTime timestamp,
+        FilePath projectFile,
+        Weight grandTotalKg,
+        TotauxCollection totaux,
+        RowsCollection rows)
+        => new Report(runId, timestamp, projectFile, grandTotalKg, totaux, rows);
+
+    public ITotauxEntry NewTotauxEntry(SectionType material, Weight totalKg)
+        => new TotauxEntry(material, totalKg);
+
+    public IReportRow NewReportRow(
+        SectionType type,
+        bool isHeader,
+        int? nombre,
+        double? lengthM,
+        double? poidsUnitaire,
+        double? poidsPiece,
+        Weight? poidsTotal)
+        => new ReportRow(type, isHeader, nombre, lengthM, poidsUnitaire, poidsPiece, poidsTotal);
 }

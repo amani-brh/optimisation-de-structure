@@ -1,4 +1,6 @@
 ﻿using AmaniRobot.Domain;
+using AmaniRobot.Domain.Reports;
+using AmaniRobot.Infrastructure.PersistenceLayer.MongoDb.Serializers;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -11,7 +13,6 @@ namespace AmaniRobot.Infrastructure.PersistenceLayer.MongoDb;
 public sealed class GenocsContext : IMongoContext
 {
     private readonly IMongoDatabase _database;
-
     private readonly List<Func<Task>> _commands;
 
     public MongoClient MongoClient { get; set; }
@@ -19,27 +20,15 @@ public sealed class GenocsContext : IMongoContext
 
     public GenocsContext(IConfiguration configuration)
     {
-        // Every command will be stored and it'll be processed at SaveChanges
         _commands = new List<Func<Task>>();
 
-        // Configure mongo (You can inject the config, just to simplify)
-        MongoClient = new MongoClient(Environment.GetEnvironmentVariable("MONGOCONNECTION") ?? configuration.GetSection("MongoSettings").GetSection("Connection").Value);
+        MongoClient = new MongoClient(
+            Environment.GetEnvironmentVariable("MONGOCONNECTION") 
+            ?? configuration.GetSection("MongoSettings").GetSection("Connection").Value);
 
-        _database = MongoClient.GetDatabase(Environment.GetEnvironmentVariable("DATABASENAME") ?? configuration.GetSection("MongoSettings").GetSection("DatabaseName").Value);
-    }
-
-    public static void RegisterConventions()
-    {
-        // Set Guid to CSharp style (with dash -)
-        BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.CSharpLegacy));
-
-        var pack = new ConventionPack
-        {
-            new IgnoreExtraElementsConvention(true),
-            new IgnoreIfDefaultConvention(true)
-        };
-
-        ConventionRegistry.Register("Genocs Solution Conventions", pack, t => true);
+        _database = MongoClient.GetDatabase(
+            Environment.GetEnvironmentVariable("DATABASENAME") 
+            ?? configuration.GetSection("MongoSettings").GetSection("DatabaseName").Value);
     }
 
     public async Task<int> SaveChangesAsync()
@@ -50,17 +39,12 @@ public sealed class GenocsContext : IMongoContext
         using (Session = await MongoClient.StartSessionAsync(options: null, cancellationToken: token))
         {
             Session.StartTransaction();
-
             var commandTasks = _commands.Select(c => c());
-
             await Task.WhenAll(commandTasks);
-
-            // await Session.AbortTransactionAsync(token);
-
             await Session.CommitTransactionAsync();
             _commands.Clear();
             Session.Dispose();
-            Session = null;
+            Session = null!;
         }
 
         return count;
@@ -79,8 +63,13 @@ public sealed class GenocsContext : IMongoContext
 
     public IMongoCollection<T> GetCollection<T>(string name)
         where T : IEntity
+    {
+        // Use the settings with custom serializers registered
+        var settings = new MongoCollectionSettings();
+        return _database.GetCollection<T>(name, settings);
+    }
+    public IMongoCollection<T> GetDocumentCollection<T>(string name)
         => _database.GetCollection<T>(name);
-
     private void Dispose(bool disposing)
     {
         if (!_disposed)
@@ -91,6 +80,34 @@ public sealed class GenocsContext : IMongoContext
                 while (Session != null && Session.IsInTransaction)
                     Thread.Sleep(TimeSpan.FromMilliseconds(100));
             }
+        }
+    }
+
+    public static void RegisterConventions()
+    {
+        // Register custom serializers BEFORE registering class maps
+        BsonSerializer.RegisterSerializer(new ObjectIdToGuidSerializer());
+        
+        var pack = new ConventionPack
+        {
+            new IgnoreExtraElementsConvention(true),
+            new IgnoreIfDefaultConvention(true)
+        };
+
+        ConventionRegistry.Register("Genocs Solution Conventions", pack, t => true);
+
+        // Register Report class map AFTER serializer registration
+        RegisterReportClassMap();
+    }
+
+    private static void RegisterReportClassMap()
+    {
+        if (!BsonClassMap.IsClassMapRegistered(typeof(Report)))
+        {
+            BsonClassMap.RegisterClassMap<Report>(classMap =>
+            {
+                classMap.AutoMap();
+            });
         }
     }
 }

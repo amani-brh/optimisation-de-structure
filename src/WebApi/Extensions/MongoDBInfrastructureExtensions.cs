@@ -1,5 +1,6 @@
 using AmaniRobot.Application.Repositories;
 using AmaniRobot.Application.Services;
+using AmaniRobot.Application.UseCases;
 using AmaniRobot.Domain;
 using AmaniRobot.Infrastructure.PersistenceLayer.MongoDb;
 using AmaniRobot.Infrastructure.PersistenceLayer.MongoDb.Repositories;
@@ -12,13 +13,14 @@ public static class MongoDBInfrastructureExtensions
     {
         // Initialize the static conventions
         GenocsContext.RegisterConventions();
-
         services.AddScoped<IEntityFactory, EntityFactory>();
         services.AddScoped<IMongoContext, GenocsContext>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
-
+        services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<ImportReport>();
+        services.AddScoped<GetReport>();
         return services;
     }
 }

@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AmaniRobot.Infrastructure.PersistenceLayer.EntityFramework;
 
-public sealed class GenocsContext : DbContext
+public sealed class GenocsContext(DbContextOptions options) : DbContext(options)
 {
-    public GenocsContext(DbContextOptions options)
-        : base(options)
-    {
-    }
-
     public DbSet<Account> Accounts { get; set; }
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Credit> Credits { get; set; }
