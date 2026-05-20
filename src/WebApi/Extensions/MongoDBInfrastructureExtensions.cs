@@ -19,6 +19,7 @@ public static class MongoDBInfrastructureExtensions
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
         services.AddScoped<IReportRepository, ReportRepository>();
+        services.AddScoped<IOptimizationRepository, OptimizationRepository>();
         services.AddScoped<ImportReport>();
         services.AddScoped<GetReport>();
         return services;

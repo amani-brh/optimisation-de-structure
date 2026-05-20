@@ -1,10 +1,12 @@
 using AmaniRobot.Application.Boundaries.CloseAccount;
+using AmaniRobot.Application.Boundaries.Optimisatizer;
 using AmaniRobot.Application.Repositories;
 using AmaniRobot.Application.Services;
+using IOutputPort = AmaniRobot.Application.Boundaries.CloseAccount.IOutputPort;
 
 namespace AmaniRobot.Application.UseCases;
 
-public sealed class CloseAccount(
+public sealed partial class CloseAccount(
                 IOutputPort outputHandler,
                 IAccountRepository accountRepository,
                 IUnitOfWork unitOfWork,

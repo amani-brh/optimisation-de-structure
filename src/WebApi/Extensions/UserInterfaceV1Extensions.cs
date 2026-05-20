@@ -48,6 +48,19 @@ public static class UserInterfaceV1Extensions
         services.AddScoped<Application.Boundaries.ImportReport.GetAllReports.IOutputPort>(
             x => x.GetRequiredService<GetAllReportsPresenter>());
 
+
+        // Optimization presenter + use case
+        services.AddScoped<AmaniRobot.WebApi.UseCases.V1.Optimisation.CreateOptimizationPresenter>();
+        services.AddScoped<AmaniRobot.Application.Boundaries.Optimisatizer.IOutputPort>(
+            x => x.GetRequiredService<AmaniRobot.WebApi.UseCases.V1.Optimisation.CreateOptimizationPresenter>());
+
+
+        services.AddScoped<AmaniRobot.WebApi.UseCases.V1.Optimisation.GetAllOptimizationsPresenter>();
+        services.AddScoped<AmaniRobot.Application.Boundaries.Optimisatizer.getAll.IOutputPort>(
+            x => x.GetRequiredService<AmaniRobot.WebApi.UseCases.V1.Optimisation.GetAllOptimizationsPresenter>());
+        services.AddScoped<AmaniRobot.Application.UseCases.GetAllOptimizations>();
+
+        services.AddScoped<AmaniRobot.Application.UseCases.CreateOptimization>();
         // Use cases — fully qualified to avoid collision with boundary namespace names
         services.AddScoped<Application.UseCases.ImportReport>();
         services.AddScoped<Application.UseCases.GetReport>();
